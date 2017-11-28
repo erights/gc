@@ -1,5 +1,4 @@
-# Wasm-linkage: 
-## A subset of wasm-gc without dynamic allocation or gc
+# Wasm-linkage:<br>A subset of wasm-gc without dynamic allocation or gc
 
 This repository is a clone of [github.com/WebAssembly/gc/](https://github.com/WebAssembly/gc/)
 which is a clone of [github.com/WebAssembly/spec/](https://github.com/WebAssembly/spec/).
