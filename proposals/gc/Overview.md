@@ -72,7 +72,7 @@ proposal does not enable passing slices of either memory or tables.
   
 The passing of references-to-closures on the stack parallels the passing of numbers on the stack. If a function wishes to remember a passed number after the function returns, it writes it somewhere in memory, according to whatever the memory management discipline is of that language in that compartment. If a function wishes to remember a passed ref-to-closure after the function returns, it writes it somewhere into a table of functions of that type, according to whatever the table-memory management discipline is of that language in that compartment.
 
-If the memory management within a compartment goes haywire, it fouls its own nest --- it destroys the integrity of its own compartment. But it does not threaten the integrity of defensively consistent compartments that it interacts with.
+If the memory management within a compartment goes haywire, it fouls its own nest --- it destroys the integrity of its own compartment. But it does not threaten the integrity of defensively consistent compartments that it interacts with. In this sense, a compartment is analogous to an OS process with its own address space, and an inter-compartment call is like an IPC. But a call_ref call site can often be ignorant of whether the call is intra- or inter-compartment with little cost.
 
 ### An Implementation Approach
 
