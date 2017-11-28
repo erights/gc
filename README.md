@@ -1,4 +1,5 @@
-# Wasm-linkage: A subset of wasm-gc without dynamic allocation or gc
+# Wasm-linkage: 
+## A subset of wasm-gc without dynamic allocation or gc
 
 This repository is a clone of [github.com/WebAssembly/gc/](https://github.com/WebAssembly/gc/)
 which is a clone of [github.com/WebAssembly/spec/](https://github.com/WebAssembly/spec/).
@@ -7,7 +8,8 @@ The wasm-linkage we propose here is a stepping stone towards wasm-gc that solves
 
 See the [overview](Overview.md) for a summary of the wasm-linkage proposal.
 
-Starting points:
+Background:
+   * [Wasm itself](https://github.com/WebAssembly/spec/) of course
    * [The wasm-gc proposal](https://github.com/WebAssembly/gc/blob/master/proposals/gc/Overview.md)
    * The [host bindings proposal](https://github.com/WebAssembly/host-bindings/blob/master/proposals/host-bindings/Overview.md) ([slides](https://docs.google.com/presentation/d/10vz6pldVOA8N3guv2jf4DCUujqz6jFmDnp37ax4SCc0/edit?usp=sharing)).
    * The [first inter-compartment linkage proposal](https://groups.google.com/d/msg/e-lang/3A6zYWF6u5E/KH2Jf39fBgAJ)
