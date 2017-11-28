@@ -37,12 +37,12 @@
 
 ### Non-goals (of wasm-gc non-goals)
 
-* seamless interoperability between multiple languages
+* Seamless interoperability between multiple languages
 
-### Non-goals (other)
+### Non-goals (at the moment. Would be nice to have)
 
-   * Unlike [first inter-compartment linkage proposal](https://groups.google.com/d/msg/e-lang/3A6zYWF6u5E/KH2Jf39fBgAJ) or [Counter-proposals #1 and #2](https://groups.google.com/d/msg/e-lang/3A6zYWF6u5E/2RpcpcviBgAJ) this wasm-linkage
-one does not enable passing slices or either memory or tables.
+   * Unlike the [first inter-compartment linkage proposal](https://groups.google.com/d/msg/e-lang/3A6zYWF6u5E/KH2Jf39fBgAJ) or [Counter-proposals #1 and #2](https://groups.google.com/d/msg/e-lang/3A6zYWF6u5E/2RpcpcviBgAJ) this wasm-linkage
+proposal does not enable passing slices of either memory or tables.
    * As discussed in the [WASM and ocap](https://groups.google.com/forum/#!topic/e-lang/3A6zYWF6u5E) thread, depending on how concurrency is introduced, wasm modules may no longer be able to be defensively consistent at reasonable effort. The key question is whether module instance A may enter module B in thread T2 while B is already executing in T1. This is the pervasive shared state concurrency of Java, which has proven incompatible with defensive programming.
 
 ## Background
