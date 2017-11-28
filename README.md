@@ -5,7 +5,7 @@ which is a clone of [github.com/WebAssembly/spec/](https://github.com/WebAssembl
 
 The wasm-linkage we propose here is a stepping stone towards wasm-gc that solves several important problems, but does not yet introduce any need for dynamic allocation of garbage collection. We intend wasm-linkage to be a superset of current wasm and a subset of the full wasm-gc.
 
-See the [overview](https://github.com/erights/gc/blob/master/proposals/gc/Overview.md) for a summary of the wasm-linkage proposal.
+See the [overview](https://github.com/erights/wasm-linkage/blob/master/proposals/gc/Overview.md) for a summary of the wasm-linkage proposal.
 
 The claims:
    * Wasm-linkage enables modular inter-compartment linkage in an ocap-safe and
