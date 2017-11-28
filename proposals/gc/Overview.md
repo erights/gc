@@ -84,8 +84,9 @@ Wasm-linkage support should maintain Wasm's efficiency properties as much as pos
 
 ### Evaluation
 
-Demonstrate that the Alice-Bob-Carol example works.
-Write a trivial defensively consistent module and try to attack it from other modules.
+* Demonstrate that the Alice-Bob-Carol example works.
+* Demonstrate the variant with chained delegation.
+* Write a trivial defensively consistent module and try to attack it from other modules.
 
 ## Use Cases
 
