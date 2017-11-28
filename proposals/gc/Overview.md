@@ -3,6 +3,25 @@
 ## Introduction
 
 ### Motivation
+   * Enable modular inter-compartment linkage in an ocap-safe and
+     ocap-expressive manner.
+   * Be a superset of (current) wasm and a subset of wasm-gc
+   * Do not create any need for dynamic allocation or
+     garbage collection.
+   * Provide the core mechanism needed for host bindings,
+     hiding the differences between host functions and functions from other
+     compartments. From the perspective of wasm code, the host is as-if
+     just another compartment.
+   * Omit needless statefulness, in the sense raised in the 
+     [WASM and ocap](https://groups.google.com/forum/#!topic/e-lang/3A6zYWF6u5E) thread.
+   * Enable defensively consistent modules
+     at reasonable effort, given the current wasm and wasm-gc limits on shared state concurrency.
+   * Little overhead compared to current intra-compartment practice for passing function pointers,
+     such as passing three words on the stack per function pointer, rather than one. This enables
+     compilers to use this call mechanism for dynamic calls in general without making a special case for
+     intra-compartment calls.
+
+### Non-goals (of wasm-gc goals)
 
 * Efficient support for high-level languages
   - faster execution
@@ -16,7 +35,23 @@
 * Provide access to industrial-strength GCs
   - at least on the web, VMs already have high performance GCs
 
-* Non-goal: seamless interoperability between multiple languages
+### Non-goals (of wasm-gc non-goals)
+
+* seamless interoperability between multiple languages
+
+### Non-goals (other)
+
+   * Unlike [first inter-compartment linkage proposal](https://groups.google.com/d/msg/e-lang/3A6zYWF6u5E/KH2Jf39fBgAJ) or [Counter-proposals #1 and #2](https://groups.google.com/d/msg/e-lang/3A6zYWF6u5E/2RpcpcviBgAJ) this wasm-linkage
+one does not enable passing slices or either memory or tables.
+   * As discussed in the [WASM and ocap](https://groups.google.com/forum/#!topic/e-lang/3A6zYWF6u5E) thread, depending on how concurrency is introduced, wasm modules may no longer be able to be defensively consistent at reasonable effort. The key question is whether module instance A may enter module B in thread T2 while B is already executing in T1. This is the pervasive shared state concurrency of Java, which has proven incompatible with defensive programming.
+
+Background:
+   * [Wasm itself](https://github.com/WebAssembly/spec/) of course
+   * [The wasm-gc proposal](https://github.com/WebAssembly/gc/blob/master/proposals/gc/Overview.md)
+   * The [host bindings proposal](https://github.com/WebAssembly/host-bindings/blob/master/proposals/host-bindings/Overview.md) ([slides](https://docs.google.com/presentation/d/10vz6pldVOA8N3guv2jf4DCUujqz6jFmDnp37ax4SCc0/edit?usp=sharing)).
+   * The [first inter-compartment linkage proposal](https://groups.google.com/d/msg/e-lang/3A6zYWF6u5E/KH2Jf39fBgAJ)
+     of the [WASM and ocap](https://groups.google.com/forum/#!topic/e-lang/3A6zYWF6u5E) thread.
+   * [Counter-proposals #1 and #2](https://groups.google.com/d/msg/e-lang/3A6zYWF6u5E/2RpcpcviBgAJ)
 
 
 ### Challenges
@@ -25,42 +60,30 @@
 * Lean but sufficiently universal
 * Language-independent
 * Trade-off triangle between simplicity, expressiveness and performance
-* Interaction with threads
-
 
 ### Approach
 
-* Only basic but general structure: tuples (structs) and arrays.
-* No heavyweight object model.
-* Accept minimal amount of dynamic overhead (checked casts) as price for simplicity/universality.
-* Independent from linear memory.
-* Pay as you go; in particular, no effect on code not using GC.
-* Don't introduce dependencies on GC for other features (e.g., using resources through tables).
-* Avoid generics or other complex type structure _if possible_.
-* Extend the design iteratively, ship a minimal set of functionality fast.
-
-
-### Requirements
-
-* Allocation of structures that are garbage collected.
-* Allocation of unstructured byte arrays that are garbage collected.
-* Handles to heap values from the embedder, garbage collected.
-* Manipulating references to these, as value types.
-* Forming unions of different types, as value types? (future extension?)
-* Defining, allocating, and indexing structures as extensions to imported types? (future extension)
-* Exceptions (separate proposal)
-* Direct support for strings? (separate proposal)
-* Safe interaction with threads (sharing, atomic access)
+* Introduce only the typed-function and ref-to-typed-function types from wasm-gc.
+* Allow ref-to-typed-function to be passed in parameters and stored in local variables.
+* Introduce the `call_ref` opcode from wasm-gc
+* Allow new tables (as the wasm spec already anticipates) where each new table is typed
+  as a uniform array of refs-to-typed function.
+* Provide instructions for loading and storing between table entries and stack variables.
+* Add a new ref-to-typed-closure that is like a ref-to-typed-function but with an additional
+  field that enables the code of the creating compartment to create an indivisble
+  closure using its own memory manager, which wasm remains ignorant of.
+* The ref-to-typed-closure is passed by copy just as ref-to-typed function is.
+* The ref-to-typed-closure is likely to be a subset of the anticipated
+  but not-yet-speced ref-to-typed-closure from wasm-gc.
 
 
 ### Efficiency Considerations
 
-GC support should maintain Wasm's efficiency properties as much as possible, namely:
+Wasm-linkage support should maintain Wasm's efficiency properties as much as possible, namely:
 
 * all operations are very cheap, ideally constant time,
 * structures are contiguous, dense chunks of memory,
 * accessing fields are single-indirection loads and stores,
-* allocation is fast,
 * no implicit boxing operations (i.e. no implicit allocation on the heap),
 * primitive values should not need to be boxed to be stored in managed data structures,
 * allows ahead-of-time compilation and code caching.
@@ -68,345 +91,26 @@ GC support should maintain Wasm's efficiency properties as much as possible, nam
 
 ### Evaluation
 
-Should attempt to implement 2-3 exemplary languages:
-
-* an object-oriented language (e.g., a subset of Java, with classes, inheritence, interfaces),
-* a typed functional language (e.g., a subset of ML, with closures, polymorphism, variant types)
-* an untyped language (e.g., a subset of Scheme or Python or something else)
-
+Demonstrate that the Alice-Bob-Carol example works.
+Write a trivial defensively consistent module and try to attack it from other modules.
 
 ## Use Cases
-
-### Tuples and Arrays
-
-* Want to represent first-class tuples/records/structs with static indexing.
-* Want to represent arrays with dynamic indexing.
-* Possibly want to create arrays with both fixed or dynamic size.
-
-Example (fictional language):
-```
-type tup = (int, int, bool)
-type vec3d = float[3]
-type buf = {pos : int, buf : char[]}
-```
-
-Needs:
-
-* user-defined structures and arrays as heap objects,
-* references to those as first-class values.
-
-
-### Objects and Method Tables
-
-* Want to represent instances as structures, whose first field is the method table.
-* Want to represent method tables themselves as structures, whose fields are function pointers.
-* Subtyping is relevant, both on instance types and method table types.
-
-Example (Java-ish):
-```
-class C {
-  int a;
-  void f(int i);
-  int g();
-}
-class D extends C {
-  double b;
-  override int g();
-  int h();
-}
-```
-
-```
-(type $f-sig (func (param (ref $C)) (param i32)))   ;; first param is `this`
-(type $g-sig (func (param (ref $C)) (result i32)))
-(type $h-sig (func (param (ref $D)) (result i32)))
-
-(type $C (struct (ref $C-vt) (mut i32))
-(type $C-vt (struct (ref $f-sig) (ref $gh-sig)))    ;; all immutable
-(type $D (struct (ref $D-vt) (mut i32) (mut f64)))  ;; subtype of $C
-(type $D-vt (struct (extend $C-vt) (ref $g-sig)))   ;; immutable, subtype of $C-vt
-```
-(Note: the use of `extend` in this example and others is assumed to be simple syntactic sugar for expanding the referenced structure type in place; subtyping still is meant to defined [structurally](#subtyping).)
-
-Needs:
-
-* (structural) subtyping,
-* immutable fields (for sound subtyping),
-* universal type of references,
-* down casts
-* dynamic linking might add a whole new dimension.
-
-To emulate the covariance of the `this` parameter, one down cast on `this` is needed in the compilation of each method that overrides a method from a base class.
-For example, `D.g`:
-```
-(func $D.g (param $Cthis (ref $C))
-  (local $this (ref $D))
-  (block $fail (result (ref $D))
-    (set_local $this (cast_down (ref $Cthis) (ref $D) $fail (get_local $Cthis)))
-    ...
-  )
-  (unreachable)
-)
-```
 
 
 ### Closures
 
-* Want to associate a code pointer and its "environment" in a GC-managed object
+* Want to associate a code pointer and its "environment" in a pass-by-copy reference-to-typed-closure
 * Want to be able to allow compiler of source language to choose appropriate environment representation
-
-Example:
-```
-function outer(x : float) : float -> float {
-  let a = x + 1.0
-  function inner(y : float) {
-    return y + a + x
-  }
-  return inner
-}
-
-function caller() {
-  return outer(1.0)(2.0)
-}
-```
-
-```
-(type $code-f64-f64 (func (param $env (ref $clos-f64-f64)) (param $y f64) (result f64)))
-(type $clos-f64-f64 (struct (field $code (ref $code-f64-f64)))
-(type $inner-clos (struct (extend $clos-f64-f64) (field $x f64) (field $a f64))
-
-(func $outer (param $x f64) (result (ref $clos-f64-f64))
-  (ref_func $inner)
-  (get_local $x)
-  (f64.add (get_local $x) (f64.const 1))
-  (new $inner-clos)
-  (cast_up $clos-f64-f64)
-)
-
-(func $inner (param $clos (ref $clos-f64-f64)) (param $y f64) (result f64)
-  (local $env (ref $inner-clos))
-  (block $fail (result (ref $clos-f64-f64))
-    (set_local $env (cast_down (ref $clos-f64-f64) (ref $inner-clos) $fail (get_local $clos)))
-    (get_local $y)
-    (get_field $env $a (get_local $inner-clos))
-    (f64.add)
-    (get_field $env $x (get_local $inner-clos))
-    (f64.add)
-    (return)
-  )
-  (unreachable)
-)
-
-(func $caller (result f64)
-  (local $clos (ref $clos-f64-f64))
-  (set_local $clos (call $outer (f64.const 1)))
-  (call_ref
-    (get-local $clos)
-    (f64.const 2)
-    (get_field $clos-f64-f64 $code (get_local $clos))
-  )
-)
-```
+  including the same freedom of manual memory management that current compilers to plain wasm have.
 
 Needs:
 * function pointers
 * (mutually) recursive function types
-* up & down casts
-
-The down cast for the closure environment is necessary because expressing its static type faithfully would require first-class generics and existential types.
-
-Note that this example shows just one way to represent closures ("display closures").
-WebAssembly should provide primitives that allow high-level language compilers to choose specific, efficient representations for closures in their source programs.
-An alternative is to provide [primitive support](#closures) for closures.
-
-
-### Parametric Polymorphism
-
-TODO: via type `anyref` and `intref`
 
 
 ### Type Export/Import
 
 * Want to allow type definitions to be imported from other modules.
-* As much as possible of the above constructions should be allowed with abstract types.
-* More complicated linking patterns might require user-space linking hooks.
-* Possibly: allow abstract type exports (encapsulation)?
-* Lots of tricky details here, mostly ignore for now...
-
-
-## Basic Functionality: Simple Aggregates
-
-* Extend the Wasm type section with new constructors for aggregate types.
-* Extend the value types with new constructors for references and interior references.
-* Aggregate types are not value types, only references to them are.
-* References are never null; nullable reference types are separate.
-
-
-### Structures
-
-*Structure* types define aggregates with heterogeneous fields that are _statically indexed_:
-```
-(type $time (struct (field i32) (field f64)))
-(type $point (struct (field $x f64) (field $y f64) (field $z f64)))
-```
-Such types can be used by forming *reference types*, which are a new type of value type:
-```
-(local $var (ref $point))
-```
-
-Fields are *accessed* with generic load/store instructions that take a reference to a structure:
-```
-(func $f (param $p (ref $point))
-  (store_field $point $y (get_local $p)
-    (load_field $point $x (get_local $p))
-  )
-)
-```
-All accesses are type-checked at validation time.
-
-Structures are *allocated* witha  `new` instruction that take initialization values for each field.
-The operator yields a reference to the respective type:
-```
-(func $g
-  (call $g (new_struct $point (i32.const 1) (i32.const 2) (i32.const 3)))
-)
-```
-Structures are garbage-collected.
-
-Structures can be compared for identity:
-```
-(same (new $point ...) (new $point ...))  ;; false
-```
-TODO: Could even allow heterogeneous equality (equality between operands of different type), but that might lead to some discontinueties or even prevent some potential optimizations?
-
-
-### Arrays
-
-*Array* types define aggregates with _homogeneous elements_ that are _dynamically indexed_:
-```
-(type $vector (array f64))
-(type $matrix (array (type $vector)))
-```
-Such types again can be used by forming reference types.
-For now, we assume that all array types have dynamic ([flexible](#flexible-aggregates)) size.
-
-Elements are accessed with generic load/store instructions that take a reference to an array:
-```
-(func $f (param $v (ref $vector))
-  (store_elem $vector (get_local $v) (i32.const 1)
-    (load_elem $vector (get_local $v) (i32.const 2))
-  )
-)
-```
-The element type of every access is checked at validation time.
-The index is checked at execution time.
-A trap occurs if the index is out of bounds.
-
-Arrays are *allocated* with a `new` instruction that takes a size and an initialization value as operands, yielding a reference:
-```
-(func $g
-  (call $g (new_array $vector (i32.const 0) (i64.const 3.14)))
-)
-```
-Arrays are garbage-collected.
-
-The *length* of an array, i.e., the number of elements, can be inquired via the `load_length` instruction:
-```
-(load_length $vector (get_local $v))
-```
-
-Like structures, arrays can be compared for identity.
-
-
-### Packed Fields
-
-Fields and elements can have a packed *storage type* `i8` or `i16`:
-```
-(type $s (struct (field $a i8) (field $b i16)))
-(type $buf (array i8))
-```
-The order of fields is not observable, so implementations are free to optimize types by reordering fields or adding gaps for alignment.
-
-Packed fields require special load/store instructions:
-```
-(load_field_packed_s $s $a (...))
-(load_field_packed_u $s $a (...))
-(store_field_packed $s $a (...) (...))
-(load_elem_packed_s $s $a (...))
-(load_elem_packed_u $s $a (...))
-(store_elem_packed $s $a (...) (...))
-```
-
-
-### Mutability
-
-Fields and elements can either be immutable or *mutable*:
-```
-(type $s (struct (field $a (mut i32)) (field $b i32)))
-(type $a (array (mut i32)))
-```
-Store operators are only valid when targeting a mutable field or element.
-
-Immutability is needed to enable the safe and efficient [subtyping](#subtyping), especially as needed for the [objects](#objects-and-method-tables) use case.
-
-
-### Nullability
-
-By default references cannot be null,
-avoiding any runtime overhead for null checks when using them.
-
-Nullable references are available as separate types called `optref`.
-
-TODO: Design a casting operator that avoids the need for control-flow sensitive typing.
-
-
-### Defaultability
-
-Most value types, including all numeric types and nullable references are *defaultable*, which means that they have 0/null as a default value.
-Other reference types are not defaultable.
-
-Certain restrictions apply to non-defaultable types:
-
-* Local declarations of non-defaultable type must have an initializer.
-* Allocations of aggregates with non-defaultable fields or elements must have initializers.
-
-Objects whose members all have _mutable_ and _defaultable_ type may be allocated without initializers:
-```
-(type $s (struct (field $a (mut i32)) (field (mut (ref $s)))))
-(type $a (array (mut f32)))
-
-(new_default_struct $s)
-(new_default_array $a (i32.const 100))
-```
-
-
-### Sharing
-
-TODO: Distinguish types safe to share between threads in the type system.
-
-
-## Other Reference Types
-
-### Universal Type
-
-The type `anyref` can hold references of any reference type.
-It can be formed via [up casts](#casting),
-and the original type can be recovered via [down casts](#casting).
-
-
-### Host Types
-
-The embedder may define its own set of types (such as DOM objects), or allow the user to create their own types using the embedder API (including a subtype relation between them).
-Such *host types* can be [imported](import-and-export) into a module, where they are treated as opaque data types.
-
-There are no operations to manipulate such types, but a WebAssembly program can receive references to them as parameters or results of imported/exported Wasm functions. Such "foreign" references may point to objects on the _embedder_'s heap. Yet, they can safely be stored in or round-trip through Wasm code.
-
-(type $Foreign (import "env" "Foreign"))
-(type $s (struct (field $a i32) (field $x (ref Foreign)))
-
-(func (export "f") (param $x (ref Foreign))
-  ...
-)
 
 
 ### Function References
@@ -432,24 +136,6 @@ Values of function reference type are formed with the `ref_func` operator:
 (func $h (param i32) ...)
 ```
 
-### Tagged Integers
-
-Efficient implentations of untyped languages or languages with parametric polymorphism often rely on a _universal representation_, meaning that all values are word-sized.
-At the same time, they want to avoid the cost of boxing wherever possible, by passing around integers unboxed, and using a tagging scheme to distinguish them from pointers in the GC.
-
-To implement any such language efficiently, Wasm would need to provide such a mechanism by introducing a built-in reference type `intref` that represents tagged integers.
-There are only two instructions for converting from and to such reference types:
-```
-tag : [i32] -> [intref]
-untag : [intref] -> [i32]
-```
-Being reference types, tagged integers can be casted into `anyref`, and can participate in runtime type dispatch with `cast_down`.
-
-To avoid portability hazards, the value range of `intref` has to be restricted to at most 31 bit.
-The `tag` instruction would tap otherwise. Or it could include a label to branch to in that case.
-
-Alternatively, allow references to any numeric type. There are `ref` and `deref` instructions for all of them. It is up to implementations (and transparent to the semantics) which values they can optimize and represent unboxed. This is a bit more high-level but would allow for maximum performance on all architectures.
-
 
 ## Type Structure
 
@@ -458,18 +144,17 @@ Alternatively, allow references to any numeric type. There are `ref` and `deref`
 The type syntax can be captured in the following grammar:
 ```
 num_type       ::=  i32 | i64 | f32 | f64
-ref_type       ::=  (ref <def_type>) | intref | anyref | anyfunc
+ref_type       ::=  (ref <def_type>)
 value_type     ::=  <num_type> | <ref_type>
 
-packed_type    ::=  i8 | i16
-storage_type   ::=  <value_type> | <packed_type>
-field_type     ::=  <storage_type> | (mut <storage_type>)
-
-data_type      ::=  (struct <field_type>*) | (array <field_type>)
 func_type      ::=  (func <value_type>* <value_type>*)
-def_type       ::=  <data_type> | <func_type>
+def_type       ::=  <func_type>
 ```
 where `value_type` is the type usable for parameters, local variables and the operand stack, and `def_type` describes the types that can be defined in the type section.
+
+
+# TEXT BELOW THIS LINE NOT YET REVISED
+
 
 
 ### Type Recursion
