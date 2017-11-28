@@ -1,8 +1,22 @@
-# GC Extension
+# Wasm-linkage Extension
 
 ## Introduction
 
-### Motivation
+### Motivations
+
+* Modular linkage
+
+A wasm function (i.e., the wasm value that wasm code can invoke) is currently speced to take only numbers as arguments and to return only numbers as results. It may at first seem puzzling why this is sufficient, given that wasm is the target of compilation from languages in which functions can be passed as parameters to functions. The answer is that, in the dominant pattern of use, both calling function `f` and called function `g` are assumed to be share the same indexable spaces, so a table index that `f` uses to refer to a function `h1` can be used by `g` to refer to the same function `h1`, by virtue of indexing into the same table.
+
+If `f` and `g` are in the same instance, then this assumption is necessarily true. However, many uses of wasm cross module instance boundaries: `g` might have been exported from `g`'s module `G` and imported into `f`'s module `F`. In this case, the assumption does not necessarily hold. The index `f` uses to index into `F`'s tables to designate `h1`, if transmitted to `g` and used by `g` to index into `G`'s tables, might designate instead completely unrelated function `h2`.
+
+Language compilers targeting wasm may map intermodule linkage of their source language to inter-instance linkage of their wasm target. They do not encounter this confusion in practice because they use wasm's ability to import and export memories and tables so that all instances linked together share the same memories and the same tables. Among all instances linked together in this way, a table index as used by any function in any of these instances will designate the same thing as that clist index used by any other function in any of those instances. Likewise for numbers to be interpreted as addresses: they can simply be passed as numbers because they index into the same memory.
+
+* Instances vs Compartments
+
+This linkage pattern is so common that we need a name for it. Because there is no isolation between a bunch of instances linked together in this manner, let's call the whole bunch a *compartment*. The wasm module linkage mechanism is clearly designed to enable export/import of functions across compartments. However, the restriction that parameters and return results can only be numbers only works coherently within a compartment. At the same time, wasm does not make visible any difference between calling within a compartment vs calling between them. Wasm code currently cannot reasonably avoid this confusion between `h1` and `h2`.
+
+
    * Enable modular inter-compartment linkage in an ocap-safe and
      ocap-expressive manner.
    * Be a superset of (current) wasm and a subset of wasm-gc
