@@ -6,11 +6,10 @@ We first present a baseline proposal for wasm-linkage that introduces only pass-
    * a superset of current wasm
    * a subset of wasm-gc as currently proposed
    * does not need any dynamic allocation and collection
-   * repairs a linkage confusion that current wasm suffers from
+   * repairs wasm's current linkage confusion at only marginal expense
    * enables linked defensive wasm compartments
-   * turns wasm into a minimal formally adequate ocap machine supporting full granovetter introduction
+   * turns wasm into a formally adequate ocap machine
    * provides the core mechanism needed for host bindings
-   * provides a safe alternative for compiling "pointers to functions" that is only marginally more expensive than current unsafe practice.
    
 However, this baseline by itself has various practical problems. Separate pages (TODO) then explore various extensions of this baseline for addressing these practical problems, while still avoiding dynamic allocation or garbage collection. Some of these extensions will be outside wasm-gc as currently proposed, but only make sense if future wasm-gc adopts these same extensions, and so remains a superset.
 
