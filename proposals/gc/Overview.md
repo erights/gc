@@ -65,7 +65,7 @@ proposal does not enable passing slices of either memory or tables.
 ### Approach
 
 * Introduce only the typed-function and ref-to-typed-function types from wasm-gc.
-* Allow ref-to-typed-function to be passed in parameters and stored in local variables.
+* Allow ref-to-typed-function on the stack (passed in parameters, stored in local variables and the operand stack).
 * Introduce the `call_ref` opcode from wasm-gc
 * Allow new tables (as the wasm spec already anticipates) where each new table is typed
   as a uniform array of refs-to-typed function.
