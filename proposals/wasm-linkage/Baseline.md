@@ -1,7 +1,5 @@
 # Wasm-linkage Baseline Proposal
 
-## Introduction
-
 We first present a baseline proposal for wasm-linkage that introduces only pass-by-copy opqaue references-to-typed-functions as inter-compartment object-capabilities. This baseline system is 
    * a superset of current wasm
    * a subset of wasm-gc as currently proposed
@@ -13,9 +11,9 @@ We first present a baseline proposal for wasm-linkage that introduces only pass-
    
 However, this baseline by itself has various practical problems. Separate pages (TODO) then explore various extensions of this baseline for addressing these practical problems, while still avoiding dynamic allocation or garbage collection. Some of these extensions will be outside wasm-gc as currently proposed, but only make sense if future wasm-gc adopts these same extensions, and so remains a superset.
 
-### Motivations
+## Motivations
 
-* Modular linkage
+### Modular linkage
 
 A wasm function (i.e., the wasm value that wasm code can invoke) is currently speced to take only numbers as arguments and to return only numbers as results. It may at first seem puzzling why this is sufficient, given that wasm is the target of compilation from languages in which functions can be passed as parameters to functions. The answer is that, in the dominant pattern of use, both calling function `f` and called function `g` are assumed to be share the same indexable spaces, so a table index that `f` uses to refer to a function `h1` can be used by `g` to refer to the same function `h1`, by virtue of indexing into the same table.
 
@@ -23,7 +21,7 @@ If `f` and `g` are in the same instance, then this assumption is necessarily tru
 
 Language compilers targeting wasm may map intermodule linkage of their source language to inter-instance linkage of their wasm target. They do not encounter this confusion in practice because they use wasm's ability to import and export memories and tables so that all instances linked together share the same memories and the same tables. Among all instances linked together in this way, a table index as used by any function in any of these instances will designate the same thing as that table index used by any other function in any of those instances.
 
-* Instances vs Compartments
+### Instances vs Compartments
 
 This linkage pattern is so common that we need a name for it. Because there is no isolation between a bunch of instances linked together in this manner, let's call the whole bunch a *compartment*. The wasm module linkage mechanism is clearly designed to enable export/import of functions across compartments. However, the restriction that parameters and return results can only be numbers only works coherently within a compartment. At the same time, wasm does not make visible any difference between calling within a compartment vs calling between them. Wasm code currently cannot reasonably avoid this confusion between `h1` and `h2`.
 
@@ -43,7 +41,7 @@ This linkage pattern is so common that we need a name for it. Because there is n
 
 * Seamless interoperability between multiple languages
 
-### Non-goals (at the moment. Would be nice to have)
+### Non-goals of baseline (that extensions may address)
 
    * Unlike the [first inter-compartment linkage proposal](https://groups.google.com/d/msg/e-lang/3A6zYWF6u5E/KH2Jf39fBgAJ) or [Counter-proposals #1 and #2](https://groups.google.com/d/msg/e-lang/3A6zYWF6u5E/2RpcpcviBgAJ) this wasm-linkage
 proposal does not enable passing slices of either memory or tables.
