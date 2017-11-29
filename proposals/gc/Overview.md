@@ -1,4 +1,4 @@
-# Wasm-linkage Extension --- baseline proposal
+# Wasm-linkage Baseline Proposal
 
 ## Introduction
 
