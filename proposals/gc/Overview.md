@@ -73,13 +73,12 @@ proposal does not enable passing slices of either memory or tables.
   
 The passing of references-to-typed-function on the stack parallels the passing of numbers on the stack. If function `f` wishes to remember passed number `i` after `f` returns, `f` writes `i` somewhere in memory, according to whatever the memory management discipline is of `f`'s language in `f`'s compartment. If function `f` wishes to remember a passed ref-to-typed-function `g` after `f` returns, `f` writes `g` somewhere into a table of functions of `g`'s type, according to whatever the table-memory management discipline is of `f`'s language in `f`'s compartment.
 
-If the memory management within a compartment goes haywire, it fouls its own nest --- it destroys the integrity of its own compartment. But it does not threaten the integrity of defensively consistent compartments that it interacts with. In this sense, a compartment is analogous to an OS process with its own address space. An inter-compartment call is like an IPC. Unlike a conventiuonal OS, a `call_ref` call site can often be ignorant of whether the call is intra- or inter-compartment with little cost.
+If the memory management within a compartment goes haywire, it fouls its own nest --- it destroys the integrity of its own compartment. But it does not threaten the integrity of defensively consistent compartments that it interacts with. In this sense, a compartment is analogous to an OS process with its own address space. An inter-compartment call is like an IPC. Unlike a conventional OS, a `call_ref` call site can often be ignorant of whether the call is intra- or inter-compartment with little cost.
 
 ### An Implementation Approach
 
 The concrete representation of a ref-to-typed-function is a two word record passed by copy
-in parameter and local variables and in typed table entries. We depend on the type safety of
-wasm to keep this record opaque and indivisible. The two words are:
+on the stack (parameter and local variables, operand stack entries) and in typed table entries. We depend on the type safety of wasm to keep this record opaque and indivisible. The two words are:
    * A pointer to the machine code of the function
    * A pointer to the module instance containing this function
      
@@ -87,6 +86,7 @@ On invocation, the pointed-to-machine-code is given access to
    * the pointer to the module instance
    * whatever arguments were passed, according to the type of the function.
 
+It is likely that the current representation of a function in a table entry includes these two words, and that `call_indirect` likely already pays at least these costs. Thus, the *only* additional runtime overhead is using a two-word representation of a ref-to-typed-function on the stack, rather than the current practice of a one-word number used as a table index.
 
 ### Efficiency Considerations
 
