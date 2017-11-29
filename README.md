@@ -9,7 +9,7 @@ See the [baseline](https://github.com/erights/wasm-linkage/blob/master/proposals
 
 The general philosophy of various extensions to the baseline proposal is
 
-Today, wasm allows you to freely address your memory in your own wasm compartment. But there is no built-in, direct way to address memory of another wasm compartment. These proposals create new kind of opaque "fat pointer" that allow one wasm compartment to directly refer to a value in another wasm compartment. These fat pointers can be freely passed around, but only code in the the wasm compartment that created the fat pointer can see what it points at. Additionally, JavaScript values can be turned into these kinds of opaque pointers, and are always opaque in all wasm compartments.
+Today, wasm allows you to freely address your memory in your own [wasm compartment](https://github.com/erights/wasm-linkage/blob/master/proposals/wasm-linkage/Baseline.md#instances-vs-compartments). But there is no built-in, direct way to address memory of another wasm compartment. These proposals create new kind of opaque "fat pointer" that allow one wasm compartment to directly refer to a value in another wasm compartment. These fat pointers can be freely passed around, but only code in the the wasm compartment that created the fat pointer can see what it points at. Additionally, JavaScript values can be turned into these kinds of opaque pointers, and are always opaque in all wasm compartments.
 
 The extensions (TODO):
    * [Unmanaged Closures](https://github.com/erights/wasm-linkage/blob/master/proposals/wasm-linkage/UnmanagedClosures.md)
