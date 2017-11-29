@@ -1,6 +1,18 @@
-# Wasm-linkage Extension
+# Wasm-linkage Extension --- baseline proposal
 
 ## Introduction
+
+We first present a baseline proposal for wasm-linkage that introduces only pass-by-copy opqaue references-to-typed-functions as inter-compartment object-capabilities. This baseline system is 
+   * a superset of current wasm
+   * a subset of wasm-gc as currently proposed
+   * does not need any dynamic allocation and collection
+   * repairs a linkage confusion that current wasm suffers from
+   * enables linked defensive wasm compartments
+   * turns wasm into a minimal formally adequate ocap machine supporting full granovetter introduction
+   * provides the core mechanism needed for host bindings
+   * provides a safe alternative for compiling "pointers to functions" that is only marginally more expensive than current unsafe practice.
+   
+However, this baseline by itself has various practical problems. Separate pages (TODO) then explore various extensions of this baseline for addressing these practical problems, while still avoiding dynamic allocation or garbage collection. Some of these extensions will be outside wasm-gc as currently proposed, but only make sense if future wasm-gc adopts these same extensions, and so remains a superset.
 
 ### Motivations
 
@@ -16,24 +28,6 @@ Language compilers targeting wasm may map intermodule linkage of their source la
 
 This linkage pattern is so common that we need a name for it. Because there is no isolation between a bunch of instances linked together in this manner, let's call the whole bunch a *compartment*. The wasm module linkage mechanism is clearly designed to enable export/import of functions across compartments. However, the restriction that parameters and return results can only be numbers only works coherently within a compartment. At the same time, wasm does not make visible any difference between calling within a compartment vs calling between them. Wasm code currently cannot reasonably avoid this confusion between `h1` and `h2`.
 
-
-   * Enable modular inter-compartment linkage in an ocap-safe and
-     ocap-expressive manner.
-   * Be a superset of (current) wasm and a subset of wasm-gc
-   * Do not create any need for dynamic allocation or
-     garbage collection.
-   * Provide the core mechanism needed for host bindings,
-     hiding the differences between host functions and functions from other
-     compartments. From the perspective of wasm code, the host is as-if
-     just another compartment.
-   * Omit needless statefulness, in the sense raised in the 
-     [WASM and ocap](https://groups.google.com/forum/#!topic/e-lang/3A6zYWF6u5E) thread.
-   * Enable defensively consistent modules
-     at reasonable effort, given the current wasm and wasm-gc limits on shared state concurrency.
-   * Little overhead compared to current intra-compartment practice for passing function pointers,
-     such as passing three words on the stack per function pointer, rather than one. This enables
-     compilers to use this call mechanism for dynamic calls in general without making a special case for
-     intra-compartment calls.
 
 ### Non-goals (of wasm-gc goals)
    * Efficient support for high-level languages
@@ -77,30 +71,21 @@ proposal does not enable passing slices of either memory or tables.
 * Allow new tables (as the wasm spec already anticipates) where each new table is typed
   as a uniform array of refs-to-typed function.
 * Provide instructions for loading and storing between table entries and stack variables.
-* Add a new ref-to-typed-closure that is like a ref-to-typed-function but with an additional
-  field that enables the code of the creating compartment to create an indivisble
-  closure using its own memory manager, which wasm remains ignorant of.
-* The ref-to-typed-closure is passed by copy just as ref-to-typed function is.
-* The ref-to-typed-closure is likely to be a subset of the anticipated
-  but not-yet-speced ref-to-typed-closure from wasm-gc.
   
-The passing of references-to-closures on the stack parallels the passing of numbers on the stack. If a function wishes to remember a passed number after the function returns, it writes it somewhere in memory, according to whatever the memory management discipline is of that language in that compartment. If a function wishes to remember a passed ref-to-closure after the function returns, it writes it somewhere into a table of functions of that type, according to whatever the table-memory management discipline is of that language in that compartment.
+The passing of references-to-typed-function on the stack parallels the passing of numbers on the stack. If function `f` wishes to remember passed number `i` after `f` returns, `f` writes `i` somewhere in memory, according to whatever the memory management discipline is of `f`'s language in `f`'s compartment. If function `f` wishes to remember a passed ref-to-typed-function `g` after `f` returns, `f` writes `g` somewhere into a table of functions of `g`'s type, according to whatever the table-memory management discipline is of `f`'s language in `f`'s compartment.
 
-If the memory management within a compartment goes haywire, it fouls its own nest --- it destroys the integrity of its own compartment. But it does not threaten the integrity of defensively consistent compartments that it interacts with. In this sense, a compartment is analogous to an OS process with its own address space, and an inter-compartment call is like an IPC. But a call_ref call site can often be ignorant of whether the call is intra- or inter-compartment with little cost.
+If the memory management within a compartment goes haywire, it fouls its own nest --- it destroys the integrity of its own compartment. But it does not threaten the integrity of defensively consistent compartments that it interacts with. In this sense, a compartment is analogous to an OS process with its own address space. An inter-compartment call is like an IPC. Unlike a conventiuonal OS, a `call_ref` call site can often be ignorant of whether the call is intra- or inter-compartment with little cost.
 
 ### An Implementation Approach
 
-The concrete representation of a typed-ref-to-closure is a three word record passed by copy
+The concrete representation of a ref-to-typed-function is a two word record passed by copy
 in parameter and local variables and in typed table entries. We depend on the type safety of
-wasm to keep this record opaque and indivisible. The three words are:
+wasm to keep this record opaque and indivisible. The two words are:
    * A pointer to the machine code of the function
    * A pointer to the module instance containing this function
-   * An i32 (perhaps i64) facet id that the code in the containing compartment can use, if it
-     wishes, to implement closures in the memory it manages.
      
 On invocation, the pointed-to-machine-code is given access to 
    * the pointer to the module instance
-   * the facet id
    * whatever arguments were passed, according to the type of the function.
 
 
@@ -125,22 +110,6 @@ Wasm-linkage support should maintain Wasm's efficiency properties as much as pos
 ## Use Cases
 
 
-### Closures
-
-* Want to associate a code pointer and its "environment" in a pass-by-copy reference-to-typed-closure
-* Want to be able to allow compiler of source language to choose appropriate environment representation
-  including the same freedom of manual memory management that current compilers to plain wasm have.
-
-Needs:
-* function pointers
-* (mutually) recursive function types
-
-
-### Type Export/Import
-
-* Want to allow type definitions to be imported from other modules.
-
-
 ### Function References
 
 References can also be formed to function types, thereby introducing the notion of _typed function pointer_.
@@ -163,7 +132,6 @@ Values of function reference type are formed with the `ref_func` operator:
 
 (func $h (param i32) ...)
 ```
-
 
 ## Type Structure
 
@@ -198,4 +166,3 @@ Aggregate types are considered equivalent when the unfoldings of their definitio
 Note: This is the standard definition of recursive structural equivalence for "equi-recursive" types.
 Checking it is computationally equivalent to checking whether two FSAs are equivalent, i.e., it is a non-trivial algorithm (even though most practical cases will be trivial).
 This may be a problem, in which case we need to fall back to a more restrictive definition, although it is unclear what exactly that would be.
-
