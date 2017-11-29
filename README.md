@@ -7,7 +7,7 @@ The wasm-linkage we propose here is a stepping stone towards wasm-gc that solves
 
 See the [baseline](https://github.com/erights/wasm-linkage/blob/master/proposals/wasm-linkage/Baseline.md) for a summary of the baseline wasm-linkage proposal. This baseline introduces only the refs-to-typed functions from wasm-gc, solving some important problems.
 
-The general philosophy of various extensions of this proposal is
+The general philosophy of various extensions to the baseline proposal is
 
 Today, wasm allows you to freely address your memory in your own wasm compartment. But there is no built-in, direct way to address memory of another wasm compartment. These proposals create new kind of opaque "fat pointer" that allow one wasm compartment to directly refer to a value in another wasm compartment. These fat pointers can be freely passed around, but only code in the the wasm compartment that created the fat pointer can see what it points at. Additionally, JavaScript values can be turned into these kinds of opaque pointers, and are always opaque in all wasm compartments.
 
