@@ -5,7 +5,7 @@
 We first present a baseline proposal for wasm-linkage that introduces only pass-by-copy opqaue references-to-typed-functions as inter-compartment object-capabilities. This baseline system is 
    * a superset of current wasm
    * a subset of wasm-gc as currently proposed
-   * does not need any dynamic allocation and collection
+   * does not need any dynamic allocation or collection
    * repairs wasm's current linkage confusion at only marginal expense
    * enables linked defensive wasm compartments
    * turns wasm into a formally adequate ocap machine
