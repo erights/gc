@@ -1,6 +1,6 @@
 # Wasm-linkage Baseline Proposal
 
-We first present a baseline proposal for wasm-linkage that introduces only pass-by-copy opqaue references-to-typed-functions as inter-compartment object-capabilities. This baseline system is 
+We first present a baseline proposal for wasm-linkage that introduces only pass-by-copy opaque references-to-typed-functions as inter-compartment object-capabilities. This baseline system is 
    * a superset of current wasm
    * a subset of wasm-gc as currently proposed
    * does not need any dynamic allocation or collection
