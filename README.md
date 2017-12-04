@@ -13,7 +13,7 @@ Today, wasm allows you to freely address your memory in your own [wasm compartme
 
 The extensions (TODO):
    * [Unmanaged Closures](https://github.com/erights/wasm-linkage/blob/master/proposals/wasm-linkage/UnmanagedClosures.md)
-   * [Memory-range capabiluities](https://github.com/erights/wasm-linkage/blob/master/proposals/wasm-linkage/MemCaps.md)
+   * [Memory-range capabilities](https://github.com/erights/wasm-linkage/blob/master/proposals/wasm-linkage/MemCaps.md)
    * [Table-range capabilities](https://github.com/erights/wasm-linkage/blob/master/proposals/wasm-linkage/TableCaps.md)
    * [General fat pointers](https://github.com/erights/wasm-linkage/blob/master/proposals/wasm-linkage/FatPointers.md)
    * [Host bindings](https://github.com/erights/wasm-linkage/blob/master/proposals/wasm-linkage/HostBindings.md)
