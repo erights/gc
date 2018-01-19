@@ -14,10 +14,10 @@ Today, wasm allows you to freely address your memory in your own [wasm compartme
 Talk slides: [Wasm as an OCap Machine](wasm-ocap.pdf)
 
 The extensions (TODO):
-   * [Unmanaged Closures](UnmanagedClosures.md)
-   * [Memory-range capabilities](MemCaps.md)
-   * [Table-range capabilities](TableCaps.md)
-   * [General fat pointers](FatPointers.md)
-   * [Unmanaged Fat Closures](UnmanagedFatClosures.md)
-   * [Host bindings](HostBindings.md)
-   * [wasm-ocap](WasmOCap.md)
+   * [Unmanaged Closures](proposals/wasm-linkage/UnmanagedClosures.md)
+   * [Memory-range capabilities](proposals/wasm-linkage/MemCaps.md)
+   * [Table-range capabilities](proposals/wasm-linkage/TableCaps.md)
+   * [General fat pointers](proposals/wasm-linkage/FatPointers.md)
+   * [Unmanaged Fat Closures](proposals/wasm-linkage/UnmanagedFatClosures.md)
+   * [Host bindings](proposals/wasm-linkage/HostBindings.md)
+   * [wasm-ocap](proposals/wasm-linkage/WasmOCap.md)
