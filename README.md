@@ -20,4 +20,4 @@ The extensions (TODO):
    * [General fat pointers](proposals/wasm-linkage/FatPointers.md)
    * [Unmanaged Fat Closures](proposals/wasm-linkage/UnmanagedFatClosures.md)
    * [Host bindings](proposals/wasm-linkage/HostBindings.md)
-   * [wasm-ocap](proposals/wasm-linkage/WasmOCap.md)
+   * [wasm-ocap](proposals/wasm-linkage/wasm-ocap.md)
